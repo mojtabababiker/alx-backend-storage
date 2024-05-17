@@ -24,13 +24,13 @@ def track_url(fn: Callable) -> Callable:
         """
         key = f"count:{url}"
         _redis.incr(key)
-        result = _redis.get(url)
+        result = _redis.get(f"cache:{url}")
         if result:
             return result.decode("utf-8")
         else:
             result = fn(url, *args, **kwargs)
             _redis.setex(key, 10, 1)
-            _redis.setex(url, 10, result)
+            _redis.setex(f"cache:{url}", 10, result)
 
         return result
     return tracker
