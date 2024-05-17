@@ -4,13 +4,15 @@ tracking web url request using redis
 """
 import random
 from time import sleep
-from typing import Callable, Any
+from typing import Callable
 import redis
 import requests
 from functools import wraps
 
 
 _redis = redis.Redis()
+_redis.flushdb()
+
 
 def track_url(fn: Callable) -> Callable:
     """
@@ -18,7 +20,7 @@ def track_url(fn: Callable) -> Callable:
     """
 
     @wraps(fn)
-    def tracker(url: str, *args, **kwargs) -> Any:
+    def tracker(url: str, *args, **kwargs) -> str:
         """
         the main url tracker function
         """
@@ -27,10 +29,9 @@ def track_url(fn: Callable) -> Callable:
         result = _redis.get(f"cache:{url}")
         if result:
             return result.decode("utf-8")
-        else:
-            result = fn(url, *args, **kwargs)
-            _redis.setex(key, 10, 1)
-            _redis.setex(f"cache:{url}", 10, result)
+
+        result = fn(url, *args, **kwargs)
+        _redis.setex(f"cache:{url}", 10, result)
 
         return result
     return tracker
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     for _ in range(7):
         result = get_page(url)[: 30]
         cc = int(_redis.get(f"count:{url}"))
-        ttl = int(_redis.ttl(url))
+        ttl = int(_redis.ttl(f"cache:{url}"))
         print(f"{url} called {cc} times, and have {ttl} seconds left")
         print(f"the result is:\n\t{result}")
         print("="*20)
