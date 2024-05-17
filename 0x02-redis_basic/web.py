@@ -10,29 +10,29 @@ import requests
 from functools import wraps
 
 
+_redis = redis.Redis()
+
 def track_url(fn: Callable) -> Callable:
     """
     decorator to keep tracking the url with redis
     """
-    _redis = redis.Redis()
 
     @wraps(fn)
     def tracker(url: str, *args, **kwargs) -> Any:
         """
         the main url tracker function
         """
-        if url:
-            key = f"count:{url}"
-            if not _redis.exists(key):
-                result = fn(url, *args, **kwargs)
-                _redis.setex(key, 10, 0)
-                _redis.setex(url, 10, result)
-            else:
-                result = _redis.get(url) or ""
-                result = result.decode("utf-8")
+        key = f"count:{url}"
+        _redis.incr(key)
+        result = _redis.get(url)
+        if result:
+            return result.decode("utf-8")
+        else:
+            result = fn(url, *args, **kwargs)
+            _redis.setex(key, 10, 1)
+            _redis.setex(url, 10, result)
 
-            _redis.incr(key)
-            return result
+        return result
     return tracker
 
 
@@ -42,7 +42,6 @@ def get_page(url: str) -> str:
     get the html content of the url and returns it
     """
     res = requests.get(url)
-    res.raise_for_status
     return res.text
 
 
