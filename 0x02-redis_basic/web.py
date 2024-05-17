@@ -15,6 +15,7 @@ def track_url(fn: Callable) -> Callable:
     decorator to keep tracking the url with redis
     """
     _redis = redis.Redis()
+
     @wraps(fn)
     def tracker(url: str, *args, **kwargs) -> Any:
         """
@@ -23,10 +24,15 @@ def track_url(fn: Callable) -> Callable:
         if url:
             key = f"count:{url}"
             if not _redis.exists(key):
-                _redis.setex(key, 10, 1)
+                result = fn(url, *args, **kwargs)
+                _redis.setex(key, 10, 0)
+                _redis.setex(url, 10, result)
             else:
-                _redis.incr(key)
-            return fn(url, *args, **kwargs)
+                result = _redis.get(url) or ""
+                result = result.decode("utf-8")
+
+            _redis.incr(key)
+            return result
     return tracker
 
 
@@ -40,20 +46,18 @@ def get_page(url: str) -> str:
     return res.text
 
 
+"""
 if __name__ == "__main__":
-    """
+    url = "http://google.com"
     _redis = redis.Redis()
     _redis.flushdb()
-    for i in range(15):
-        url = random.choice(["https://www.google.com",
-                             "https://www.youtube.com",
-                             "https://www.wikipedia.org"]
-                            )
-        result = get_page(url)
-        call_count = _redis.get(f"count:{url}") or 0
-        ttl = _redis.ttl(f"count:{url}") or 0
-        print(f"The {url} page was called {int(call_count)}" +
-              f" and have {int(ttl)} seconds remaining")
+    for _ in range(7):
+        result = get_page(url)[: 30]
+        cc = int(_redis.get(f"count:{url}"))
+        ttl = int(_redis.ttl(url))
+        print(f"{url} called {cc} times, and have {ttl} seconds left")
+        print(f"the result is:\n\t{result}")
+        print("="*20)
+
         sleep(random.randint(1, 5))
-    """
-    pass
+"""
