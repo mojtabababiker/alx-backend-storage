@@ -41,6 +41,7 @@ def get_page(url: str) -> str:
 
 
 if __name__ == "__main__":
+    """
     _redis = redis.Redis()
     _redis.flushdb()
     for i in range(15):
@@ -54,3 +55,5 @@ if __name__ == "__main__":
         print(f"The {url} page was called {int(call_count)}" +
               f" and have {int(ttl)} seconds remaining")
         sleep(random.randint(1, 5))
+    """
+    pass
