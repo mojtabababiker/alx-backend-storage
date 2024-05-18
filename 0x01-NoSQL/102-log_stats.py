@@ -44,16 +44,14 @@ def main():
     for doc in nginx_collection.find({}, {"ip": True, "_id": False}):
         ips[doc['ip']] = ips.get(doc['ip'], 0) + 1
 
-    sorted_ips = sorted(ips.items(), reverse=True,
-                        key=lambda e: (e[1], e[0]))
+    sorted_ips = sorted(ips.items(), key=lambda e: (-e[1], e[0]))
 
     i = 0
     for ip in sorted_ips:
-        # print(ip)
-        if i >= 10:
-            break
         i += 1
         result += f"\n\t{ip[0]}: {ip[1]}"
+        if i >= 10:
+            break
     print(result)
     return result
 
