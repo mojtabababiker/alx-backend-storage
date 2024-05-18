@@ -47,8 +47,12 @@ def main():
     sorted_ips = sorted(ips.items(), reverse=True,
                         key=lambda e: (e[1], e[0]))
 
-    for ip in sorted_ips[:10]:
+    i = 0
+    for ip in sorted_ips:
         # print(ip)
+        if i >= 10:
+            break
+        i += 1
         result += f"\n\t{ip[0]}: {ip[1]}"
     print(result)
     return result
